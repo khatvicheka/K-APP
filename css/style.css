@@ -1,0 +1,185 @@
+body {
+        font-family: "Inter", sans-serif;
+        background-color: #f3f4f6; /* Light gray background */
+      }
+      .container {
+        max-width: 1200px;
+      }
+      .section-content {
+        display: none; /* Hidden by default */
+      }
+      .section-content.active {
+        display: block; /* Shown when active */
+      }
+      /* Custom scrollbar for data lists */
+      .overflow-y-auto::-webkit-scrollbar {
+        width: 8px;
+      }
+      .overflow-y-auto::-webkit-scrollbar-track {
+        background: #e0e0e0;
+        border-radius: 10px;
+      }
+      .overflow-y-auto::-webkit-scrollbar-thumb {
+        background: #9ca3af;
+        border-radius: 10px;
+      }
+      .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+        background: #6b7280;
+      }
+
+      /* Basic styling for modals */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+      .modal-overlay.show {
+        opacity: 1;
+        visibility: visible;
+      }
+      .modal-content {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 0.75rem; /* rounded-lg */
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        width: 90%;
+        max-width: 600px;
+        transform: translateY(-20px);
+        transition: transform 0.3s ease;
+      }
+      .modal-overlay.show .modal-content {
+        transform: translateY(0);
+      }
+      .quiz-option-button {
+        transition: background-color 0.2s ease, transform 0.1s ease;
+      }
+      .quiz-option-button:hover {
+        transform: translateY(-2px);
+      }
+      .quiz-option-button.correct {
+        background-color: #34d399; /* green-400 */
+        color: white;
+      }
+      .quiz-option-button.incorrect {
+        background-color: #ef4444; /* red-500 */
+        color: white;
+      }
+      .quiz-option-button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+      /* Status chip styling */
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.65rem;
+        border-radius: 9999px; /* full rounded */
+        font-size: 0.75rem; /* text-xs */
+        font-weight: 500; /* font-medium */
+        line-height: 1;
+      }
+      .status-new {
+        background-color: #bfdbfe; /* blue-200 */
+        color: #1e40af; /* blue-800 */
+      }
+      .status-learning {
+        background-color: #fefcbf; /* yellow-200 */
+        color: #b45309; /* yellow-800 */
+      }
+      .status-review {
+        background-color: #e9d5ff; /* purple-200 */
+        color: #6b21a8; /* purple-800 */
+      }
+      .status-mastered {
+        background-color: #d1fae5; /* green-200 */
+        color: #065f46; /* green-800 */
+      }
+      .status-default {
+        /* Fallback for unrecognized status */
+        background-color: #e5e7eb; /* gray-200 */
+        color: #4b5563; /* gray-700 */
+      }
+      /* Resource tag styling - Updated to match status chip border-radius */
+      .resource-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.5rem;
+        margin: 0.15rem;
+        border-radius: 9999px; /* Changed to full rounded */
+        font-size: 0.7rem; /* text-xs slightly smaller */
+        background-color: #e0f2fe; /* blue-50 */
+        color: #2563eb; /* blue-600 */
+        border: 1px solid #93c5fd; /* blue-300 */
+        cursor: pointer;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        white-space: nowrap; /* Prevent breaking into multiple lines */
+        overflow: hidden; /* Hide overflow content */
+        text-overflow: ellipsis; /* Show ellipsis for truncated text */
+        max-width: 90px; /* Make the overall tag shorter */
+      }
+      .resource-tag:hover {
+        background-color: #dbeafe; /* blue-100 */
+        border-color: #60a5fa; /* blue-400 */
+      }
+      .resource-tag-url {
+        background-color: #eef2ff; /* indigo-50 */
+        color: #4f46e5; /* indigo-600 */
+        border: 1px solid #a5b4fc; /* indigo-300 */
+      }
+      .resource-tag-url:hover {
+        background-color: #e0e7ff; /* indigo-100 */
+        border-color: #818cf8; /* indigo-400 */
+      }
+      .resource-tag span {
+        /* Span inside the tag for text truncation */
+        max-width: 80px; /* Max width for the text within the tag */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block; /* Essential for truncation on inline-flex parent */
+        vertical-align: middle; /* Align with icon */
+      }
+      /* Ensure the column content div has enough space but is constrained */
+      .resource-cell-content {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.15rem; /* Tighter gap for chips */
+        max-width: 180px; /* Max width for the entire cell content */
+        overflow-x: hidden; /* Hide if content still overflows */
+      }
+
+      /* Floating action button for Guide */
+      #guideFab {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #4f46e5; /* indigo-600 */
+        color: white;
+        border-radius: 9999px; /* full rounded */
+        width: 56px;
+        height: 56px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        cursor: pointer;
+        z-index: 999;
+      }
+      #guideFab:hover {
+        background-color: #4338ca; /* indigo-700 */
+        transform: translateY(-2px);
+      }
