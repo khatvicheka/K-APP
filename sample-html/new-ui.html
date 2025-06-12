@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Think In Korean App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter, Roboto, Noto Sans KR, Merriweather -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Merriweather:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- jQuery CDN -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f2f5; /* Light grey background */
+        display: flex;
+        flex-direction: column; /* Changed to column for vertical layout */
+        justify-content: space-between; /* Space out header, chat, input */
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        transition: background-color 0.3s ease; /* Smooth background transition */
+        width: 100%; /* Ensure body takes full width */
+      }
+      .main-content-area { /* New container for main chat elements */
+        flex-grow: 1; /* Allows it to take available height */
+        width: 100%;
+        max-width: 800px; /* Constrain width as before */
+        background-color: #ffffff; /* White background for the main chat area */
+        border-radius: 1.5rem; /* Rounded corners */
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12); /* More prominent shadow */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Hide overflow for chat history */
+        border: 1px solid #e2e8f0; /* Subtle border */
+        height: 80vh; /* Fixed height for chat view */
+      }
+
+      .chat-history {
+        flex-grow: 1; /* Takes available space */
+        padding: 1.5rem 2.5rem; /* Padding matches previous container */
+        overflow-y: auto; /* Enable scrolling for chat messages */
+        display: flex;
+        flex-direction: column;
+        gap: 1rem; /* Space between messages */
+        scroll-behavior: smooth; /* Smooth scrolling to new messages */
+      }
+
+      .chat-message {
+        max-width: 85%; /* Limit message width */
+        padding: 0.8rem 1.2rem;
+        border-radius: 1.2rem; /* Rounded chat bubbles */
+        font-size: 0.95rem;
+        line-height: 1.5;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); /* Subtle shadow for bubbles */
+        transition: all 0.3s ease;
+      }
+
+      .user-message {
+        align-self: flex-end; /* Align to the right */
+        background-color: #e0f2fe; /* Light blue for user */
+        color: #2563eb; /* Darker blue text */
+        border-bottom-right-radius: 0.3rem; /* Tighter corner for sender */
+      }
+
+      .ai-message {
+        align-self: flex-start; /* Align to the left */
+        background-color: #f3f4f6; /* Light grey for AI */
+        color: #4b5563; /* Darker grey text */
+        border-bottom-left-radius: 0.3rem; /* Tighter corner for sender */
+      }
+
+      .chat-input-area {
+        display: flex;
+        align-items: center;
+        padding: 1rem 2.5rem 1.5rem; /* Padding for input area */
+        background-color: #f9fafb; /* Light background for input */
+        border-top: 1px solid #e2e8f0; /* Separator line */
+      }
+      .chat-input-area textarea {
+        flex-grow: 1;
+        min-height: 48px; /* Fixed min-height for chat input */
+        max-height: 120px; /* Max height to prevent excessive expansion */
+        resize: none; /* No manual resize */
+        border: 1px solid #cbd5e1;
+        border-radius: 1.5rem; /* Pill-shaped input */
+        padding: 0.8rem 1.2rem;
+        font-size: 1rem;
+        transition: all 0.2s ease-in-out;
+        overflow-y: auto; /* Allow scrolling if text exceeds max-height */
+      }
+      .chat-input-area textarea:focus {
+        outline: none;
+        border-color: #63b3ed;
+        box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.4);
+      }
+      .chat-input-area button {
+        background-image: linear-gradient(
+          to right,
+          #4299e1,
+          #63b3ed
+        ); /* Blue gradient */
+        color: white;
+        border: none;
+        width: 48px; /* Fixed width for send button */
+        height: 48px; /* Fixed height for send button */
+        border-radius: 9999px; /* Fully rounded */
+        margin-left: 1rem;
+        flex-shrink: 0; /* Prevent shrinking */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+      .chat-input-area button:hover {
+        background-image: linear-gradient(
+          to right,
+          #3182ce,
+          #4299e1
+        ); /* Darker gradient on hover */
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .loading-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.5rem; /* Smaller padding for inline loading */
+        background-color: #e2e8f0;
+        border-radius: 0.75rem;
+        color: #4a5568;
+        font-weight: 500;
+        margin-bottom: 1rem; /* Space below loading indicator */
+        align-self: flex-start; /* Align with AI messages */
+      }
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left-color: #4299e1; /* Blue spinner */
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Enhanced feedback styling (for AI messages) */
+      .ai-message h3 {
+        font-weight: 600;
+        color: #1e40af;
+        margin: 0.5rem 0 0.25rem 0;
+        font-size: 1.1rem;
+      }
+      .ai-message h4 {
+        font-weight: 500;
+        color: #3730a3;
+        margin: 0.75rem 0 0.25rem 0;
+      }
+      .ai-message ul {
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+        list-style-type: disc; /* Ensure bullet points are visible */
+      }
+      .ai-message li {
+        margin: 0.25rem 0;
+        line-height: 1.6;
+      }
+      .ai-message strong {
+        font-weight: 600;
+        color: #1f2937;
+      }
+      .ai-message em {
+        font-style: italic;
+        color: #4b5563;
+      }
+      .ai-message .korean-text {
+        font-family: "Noto Sans KR", sans-serif;
+        background-color: #e2e8f0; /* Lighter background for inline Korean */
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        border-left: 3px solid #3b82f6;
+        display: inline-block; /* Allows padding and border */
+      }
+
+      /* Floating Buttons Container */
+      .float-buttons-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 10px; /* Space between buttons */
+        z-index: 1000;
+      }
+
+      /* Individual Floating Buttons */
+      .float-button {
+        background-color: #6366f1; /* Indigo */
+        color: white;
+        border-radius: 9999px; /* Fully rounded */
+        padding: 1rem;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); /* Stronger shadow */
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .float-button:hover {
+        background-color: #4f46e5; /* Darker indigo */
+        transform: scale(1.08); /* Slightly larger scale on hover */
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); /* Even stronger hover shadow */
+      }
+
+      /* Modal Styles (kept consistent as they are already modern) */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000; /* Above floating buttons */
+        backdrop-filter: blur(5px); /* Frosted glass effect */
+        -webkit-backdrop-filter: blur(5px);
+      }
+      .modal-content {
+        background-color: #ffffff;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        position: relative;
+        transform: scale(0.95);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+      }
+      .modal-content.show {
+        transform: scale(1);
+        opacity: 1;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+      .modal-close-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #6b7280;
+        transition: color 0.2s ease;
+      }
+      .modal-close-button:hover {
+        color: #1f2937;
+      }
+    </style>
+  </head>
+  <body class="antialiased">
+    <div class="main-content-area">
+      <h1 class="text-3xl font-bold text-center text-gray-800 pt-6 pb-4">
+        Think In Korean 🇰🇷
+      </h1>
+
+      <!-- Chat History Area -->
+      <div id="chatHistory" class="chat-history">
+        <!-- Initial AI greeting message -->
+        <div class="ai-message chat-message">
+          안녕하세요! 👋 한국어 연습을 시작해볼까요? 여기에 생각하는 것을 적어주세요.
+          (Hello! Shall we start practicing Korean? Please write what you're
+          thinking here.)
+        </div>
+      </div>
+
+      <!-- Chat Input Area -->
+      <div class="chat-input-area">
+        <textarea
+          id="koreanInput"
+          placeholder="여기에 한국어를 입력하세요... (Type your Korean here...)"
+          rows="1"
+        ></textarea>
+        <button id="sendButton" title="Send Message">
+          <i data-lucide="send" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating Buttons Container -->
+    <div class="float-buttons-container">
+      <!-- Floating Suggestion Button -->
+      <button id="suggestButton" class="float-button" title="Get a Writing Prompt">
+        <i data-lucide="lightbulb" class="w-7 h-7"></i>
+      </button>
+      <!-- Floating Settings Button -->
+      <button id="settingsButton" class="float-button" title="Settings">
+        <i data-lucide="settings" class="w-7 h-7"></i>
+      </button>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="text-2xl font-bold text-gray-800">App Settings</h2>
+          <button id="closeModalButton" class="modal-close-button">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
+
+        <div class="mb-4">
+          <label
+            for="geminiApiKeyInput"
+            class="block text-gray-700 text-sm font-semibold mb-2"
+          >
+            Gemini API Key:
+          </label>
+          <input
+            type="password"
+            id="geminiApiKeyInput"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-200"
+            placeholder="Enter your Gemini API key (optional)"
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            If left empty, the Canvas environment's default key will be used.
+          </p>
+        </div>
+
+        <div class="mb-4">
+          <label
+            for="backgroundColorSelect"
+            class="block text-gray-700 text-sm font-semibold mb-2"
+          >
+            Background Theme:
+          </label>
+          <select
+            id="backgroundColorSelect"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-200"
+          >
+            <option value="#f0f2f5">Default (Light Grey)</option>
+            <option value="#e0f2f7">Soft Blue</option>
+            <option value="#fdf6e3">Warm Beige</option>
+            <option value="#2d3748">Dark Mode</option>
+          </select>
+        </div>
+
+        <div class="mb-6">
+          <label
+            for="fontFamilySelect"
+            class="block text-gray-700 text-sm font-semibold mb-2"
+          >
+            Font Family:
+          </label>
+          <select
+            id="fontFamilySelect"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-200"
+          >
+            <option value="Inter, sans-serif">Inter (Default)</option>
+            <option value="Roboto, sans-serif">Roboto</option>
+            <option value="'Noto Sans KR', sans-serif">
+              Noto Sans KR (Good for Korean)
+            </option>
+            <option value="Merriweather, serif">Merriweather (Serif)</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end gap-3">
+          <button
+            id="saveSettingsButton"
+            class="bg-purple-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75"
+          >
+            <i data-lucide="save" class="inline-block mr-1 w-4 h-4"></i> Save
+            Changes
+          </button>
+          <button
+            id="cancelSettingsButton"
+            class="bg-gray-300 text-gray-800 font-semibold py-2 px-5 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Initialize Lucide Icons
+      lucide.createIcons();
+
+      // Function to format markdown-style text to HTML
+      function formatMarkdownToHTML(text) {
+        // Replace headings (### and ##)
+        text = text.replace(/^###\s*(.+)$/gm, "<h3>$1</h3>");
+        text = text.replace(/^##\s*(.+)$/gm, "<h4>$1</h4>");
+        text = text.replace(/^#\s*(.+)$/gm, "<h4>$1</h4>"); // In case AI uses single hash
+
+        // Replace bold text (multiple asterisks)
+        text = text.replace(/\*\*\*(.*?)\*\*\*/g, "<strong>$1</strong>");
+        text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+        // Replace italic text
+        text = text.replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+        // Convert bullet points (lines starting with *) to <li> elements
+        text = text.replace(/^\s*\*\s*(.+)$/gm, "<li>$1</li>");
+        text = text.replace(/^\s*-\s*(.+)$/gm, "<li>$1</li>"); // Also handle hyphens for lists
+
+        // Wrap consecutive list items in ul tags
+        text = text.replace(
+          /(<li>.*<\/li>(\s*<li>.*<\/li>)*)/gs,
+          "<ul>$1</ul>"
+        );
+
+        // Highlight Korean text in special formatting (inside quotes)
+        text = text.replace(/"([^"]+)"/g, '<span class="korean-text">$1</span>');
+
+        // Convert line breaks to <br> tags, but only where they are not already part of a block
+        text = text.replace(/(?<!<br>)\n/g, "<br>");
+
+
+        return text;
+      }
+
+      // Main application logic using jQuery
+      $(document).ready(function () {
+        // Get references to main app DOM elements
+        const $koreanInput = $("#koreanInput");
+        const $sendButton = $("#sendButton");
+        const $chatHistory = $("#chatHistory");
+        const $loadingIndicator = $(
+          '<div id="loadingIndicator" class="loading-indicator hidden"><div class="spinner"></div><span>Checking...</span></div>'
+        );
+        $chatHistory.append($loadingIndicator);
+
+        // Get references to settings DOM elements
+        const $settingsButton = $("#settingsButton");
+        const $suggestButton = $("#suggestButton");
+        const $settingsModal = $("#settingsModal");
+        const $modalContent = $(".modal-content");
+        const $closeModalButton = $("#closeModalButton");
+        const $cancelSettingsButton = $("#cancelSettingsButton");
+        const $saveSettingsButton = $("#saveSettingsButton");
+        const $geminiApiKeyInput = $("#geminiApiKeyInput");
+        const $backgroundColorSelect = $("#backgroundColorSelect");
+        const $fontFamilySelect = $("#fontFamilySelect");
+
+        // Global Firebase variables (Canvas environment provides these)
+        const appId =
+          typeof __app_id !== "undefined" ? __app_id : "default-app-id";
+        const firebaseConfig =
+          typeof __firebase_config !== "undefined"
+            ? JSON.parse(__firebase_config)
+            : {};
+        const initialAuthToken =
+          typeof __initial_auth_token !== "undefined"
+            ? __initial_auth_token
+            : null;
+
+        // Function to open the settings modal
+        function openSettingsModal() {
+          $geminiApiKeyInput.val(localStorage.getItem("geminiApiKey") || "");
+          $backgroundColorSelect.val(
+            localStorage.getItem("appBackgroundColor") || "#f0f2f5"
+          );
+          $fontFamilySelect.val(
+            localStorage.getItem("appFontFamily") || "Inter, sans-serif"
+          );
+
+          $settingsModal.removeClass("hidden");
+          setTimeout(() => $modalContent.addClass("show"), 10);
+        }
+
+        // Function to close the settings modal
+        function closeSettingsModal() {
+          $modalContent.removeClass("show");
+          setTimeout(() => $settingsModal.addClass("hidden"), 300);
+        }
+
+        // Function to apply theme settings to the body
+        function applyTheme(bgColor, fontFamily) {
+          $("body").css({
+            "background-color": bgColor,
+            "font-family": fontFamily,
+          });
+        }
+
+        // Function to load settings from localStorage on app start
+        function loadInitialSettings() {
+          const savedApiKey = localStorage.getItem("geminiApiKey");
+          const savedBackgroundColor =
+            localStorage.getItem("appBackgroundColor");
+          const savedFontFamily = localStorage.getItem("appFontFamily");
+
+          if (savedBackgroundColor) {
+            applyTheme(
+              savedBackgroundColor,
+              savedFontFamily || "Inter, sans-serif"
+            );
+          } else {
+            applyTheme("#f0f2f5", "Inter, sans-serif");
+          }
+        }
+
+        // Load settings when the app starts
+        loadInitialSettings();
+
+        // Function to scroll chat history to the bottom
+        function scrollToBottom() {
+          $chatHistory.scrollTop($chatHistory[0].scrollHeight);
+        }
+
+        // Function to add a message to the chat history
+        function addMessage(text, type, rawMarkdown = false) {
+          const $messageDiv = $(`<div class="chat-message ${type}-message"></div>`);
+          if (rawMarkdown) {
+              $messageDiv.html(formatMarkdownToHTML(text));
+          } else {
+              $messageDiv.text(text);
+          }
+          $chatHistory.append($messageDiv);
+          scrollToBottom();
+        }
+
+        // Function to call Gemini API
+        async function callGeminiApi(prompt, isSuggestion = false) {
+            $loadingIndicator.removeClass('hidden');
+            scrollToBottom();
+
+            try {
+                const userApiKey = localStorage.getItem("geminiApiKey");
+                const apiKey = userApiKey || "";
+
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        temperature: 0.7,
+                        topP: 0.95,
+                        topK: 40,
+                        maxOutputTokens: 500,
+                    },
+                };
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+
+                const result = await response.json();
+
+                if (
+                    result.candidates &&
+                    result.candidates.length > 0 &&
+                    result.candidates[0].content &&
+                    result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0
+                ) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error("AI response structure unexpected:", result);
+                    return "Failed to get AI response.";
+                }
+            } catch (error) {
+                console.error("Error during AI call:", error);
+                return "An error occurred while connecting to the AI. Please try again.";
+            } finally {
+                $loadingIndicator.addClass("hidden");
+                scrollToBottom();
+            }
+        }
+
+        // Event listener for the "Send" button
+        $sendButton.on("click", async function () {
+            const inputText = $koreanInput.val().trim();
+
+            if (!inputText) {
+                addMessage("Please enter some Korean text to check.", "ai");
+                return;
+            }
+
+            addMessage(inputText, "user");
+            $koreanInput.val("");
+
+            const prompt = `Please act as a Korean language tutor. I will provide you with Korean sentences, phrases, or paragraphs. Your task is to review my input for grammatical correctness, natural phrasing, spelling, and general fluency.
+
+            If there are errors, please provide corrections and a clear explanation of why the correction was made.
+            If the input is grammatically correct and natural, confirm that it is good and provide a brief positive comment.
+
+            Please format your response using these guidelines:
+            - Use ## Section Title: for main headings like "Review:", "Corrections:", "Suggested Correction:"
+            - Use * for bullet points
+            - Put Korean text in quotes like "한국어"
+            - Keep explanations clear and concise
+            - DO NOT use multiple asterisks like *** or **** for emphasis. Only use single or double asterisks for *italic* or **bold** as standard markdown.
+
+            Here is my Korean input: "${inputText}"`;
+
+            const aiFeedback = await callGeminiApi(prompt);
+            addMessage(aiFeedback, "ai", true);
+        });
+
+        // Allow sending message with Enter key
+        $koreanInput.on('keypress', function(e) {
+            if (e.which == 13 && !e.shiftKey) { // Enter key without Shift
+                e.preventDefault(); // Prevent new line
+                $sendButton.click(); // Trigger send button click
+            }
+        });
+
+
+        // Event listener for the "Suggest" button
+        $suggestButton.on("click", async function () {
+            addMessage("Suggest a Korean writing prompt.", "user");
+
+            const prompt = `Generate a single, interesting and simple writing prompt or question in Korean for someone learning Korean. The prompt should encourage them to think in Korean about their daily life, experiences, or simple opinions. Keep it concise, one to two sentences maximum. For example: "오늘 아침 식사로 무엇을 먹었나요?" (What did you eat for breakfast today?) or "가장 좋아하는 한국 음식은 무엇인가요?" (What is your favorite Korean food?).`;
+
+            const suggestedPrompt = await callGeminiApi(prompt, true);
+            
+            addMessage(`**Here's a writing prompt for you:**<br>${suggestedPrompt}`, "ai", true);
+            $koreanInput.val(suggestedPrompt.replace(/\n/g, ' ').trim());
+        });
+
+        // Event listeners for settings modal
+        $settingsButton.on("click", openSettingsModal);
+        $closeModalButton.on("click", closeSettingsModal);
+        $cancelSettingsButton.on("click", closeSettingsModal);
+        // Close modal when clicking outside content
+        $settingsModal.on("click", function (e) {
+          if ($(e.target).is($settingsModal)) {
+            closeSettingsModal();
+          }
+        });
+
+        $saveSettingsButton.on("click", function () {
+          const newApiKey = $geminiApiKeyInput.val().trim();
+          const newBackgroundColor = $backgroundColorSelect.val();
+          const newFontFamily = $fontFamilySelect.val();
+
+          localStorage.setItem("geminiApiKey", newApiKey);
+          localStorage.setItem("appBackgroundColor", newBackgroundColor);
+          localStorage.setItem("appFontFamily", newFontFamily);
+
+          applyTheme(newBackgroundColor, newFontFamily);
+          closeSettingsModal();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Think In Korean App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter, Roboto, Noto Sans KR, Merriweather -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Merriweather:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- jQuery CDN -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f2f5; /* Light grey background */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        transition: background-color 0.3s ease; /* Smooth background transition */
+      }
+      .container {
+        background-color: #ffffff;
+        border-radius: 1.5rem; /* Rounded corners */
+        /* box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12); */
+        padding: 2.5rem;
+        width: 100%;
+        max-width: 800px;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        border: 1px solid #e2e8f0; /* Subtle border */
+      }
+      textarea {
+        min-height: 150px; /* Ample space for writing */
+        resize: vertical; /* Allow vertical resizing */
+        border: 1px solid #cbd5e1; /* Slightly stronger border */
+      }
+      button {
+        transition: all 0.2s ease-in-out;
+      }
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); /* Stronger hover shadow */
+      }
+      /* Gradient for primary button */
+      #checkButton {
+        background-image: linear-gradient(
+          to right,
+          #4299e1,
+          #63b3ed
+        ); /* Blue gradient */
+        border: none;
+      }
+      #checkButton:hover {
+        background-image: linear-gradient(
+          to right,
+          #3182ce,
+          #4299e1
+        ); /* Darker gradient on hover */
+      }
+
+      .loading-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background-color: #e2e8f0;
+        border-radius: 0.75rem;
+        color: #4a5568;
+        font-weight: 500;
+      }
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left-color: #4299e1; /* Blue spinner */
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .feedback-card {
+        /* Renamed from feedback-area for clarity and new styling */
+        background-color: #f8faff; /* Lighter background for feedback */
+        border: 1px solid #dbe2e9; /* Slightly darker border */
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        line-height: 1.7; /* Increased line height for readability */
+        white-space: pre-wrap; /* Preserve whitespace and line breaks */
+        overflow-wrap: break-word; /* Break long words */
+        min-height: 100px; /* Ensure visibility even if empty */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* More prominent shadow */
+        color: #334155; /* Darker text for better contrast */
+        display: flex; /* Use flexbox for icon alignment */
+        gap: 1rem; /* Space between icon and text */
+        opacity: 0; /* Initial state for animation */
+        transform: translateY(10px); /* Initial state for animation */
+        transition: opacity 0.5s ease-out, transform 0.5s ease-out; /* Smooth transition */
+      }
+      .feedback-card.show-feedback {
+        /* Class to trigger feedback animation */
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .feedback-card .feedback-icon {
+        color: #4299e1; /* Blue icon */
+        flex-shrink: 0; /* Prevent icon from shrinking */
+      }
+      .feedback-card .feedback-content {
+        flex-grow: 1;
+      }
+
+      /* Enhanced feedback styling */
+      .feedback-content h3 {
+        font-weight: 600;
+        color: #1e40af;
+        margin: 0.5rem 0 0.25rem 0;
+        font-size: 1.1rem;
+      }
+      .feedback-content h4 {
+        font-weight: 500;
+        color: #3730a3;
+        margin: 0.75rem 0 0.25rem 0;
+      }
+      .feedback-content ul {
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+      }
+      .feedback-content li {
+        margin: 0.25rem 0;
+        line-height: 1.6;
+      }
+      .feedback-content strong {
+        font-weight: 600;
+        color: #1f2937;
+      }
+      .feedback-content em {
+        font-style: italic;
+        color: #4b5563;
+      }
+      .feedback-content .korean-text {
+        font-family: "Noto Sans KR", sans-serif;
+        background-color: #f3f4f6;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        border-left: 3px solid #3b82f6;
+      }
+
+      /* Floating Buttons Container */
+      .float-buttons-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 10px; /* Space between buttons */
+        z-index: 1000;
+      }
+
+      /* Individual Floating Buttons */
+      .float-button {
+        background-color: #6366f1; /* Indigo */
+        color: white;
+        border-radius: 9999px; /* Fully rounded */
+        padding: 1rem;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); /* Stronger shadow */
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .float-button:hover {
+        background-color: #4f46e5; /* Darker indigo */
+        transform: scale(1.08); /* Slightly larger scale on hover */
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); /* Even stronger hover shadow */
+      }
+
+      /* Modal Styles (kept consistent as they are already modern) */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000; /* Above floating buttons */
+        backdrop-filter: blur(5px); /* Frosted glass effect */
+        -webkit-backdrop-filter: blur(5px);
+      }
+      .modal-content {
+        background-color: #ffffff;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        position: relative;
+        transform: scale(0.95);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+      }
+      .modal-content.show {
+        transform: scale(1);
+        opacity: 1;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+      .modal-close-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #6b7280;
+        transition: color 0.2s ease;
+      }
+      .modal-close-button:hover {
+        color: #1f2937;
+      }
+    </style>
+  </head>
+  <body class="antialiased">
+    <div class="container">
+      <h1 class="text-3xl font-bold text-center text-gray-800 mb-4">
+        Practice
+      </h1>
+
+      <div class="mb-4">
+        <label
+          for="koreanInput"
+          class="block text-gray-700 text-sm font-semibold mb-2"
+        >
+          Write your Korean thoughts here:
+        </label>
+        <textarea
+          id="koreanInput"
+          class="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+          placeholder="안녕하세요!"
+        ></textarea>
+      </div>
+
+      <button
+        id="checkButton"
+        class="flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
+      >
+        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        Check My Korean
+      </button>
+
+      <div id="loadingIndicator" class="loading-indicator hidden">
+        <div class="spinner"></div>
+        <span>Checking... Please wait.</span>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-semibold text-gray-800 mb-2">AI Feedback:</h2>
+        <!-- Updated feedback area to be a "card" with an icon -->
+        <div id="feedbackOutput" class="feedback-card text-gray-800">
+          <i data-lucide="message-square" class="feedback-icon w-6 h-6"></i>
+          <div class="feedback-content">
+            Your feedback will appear here after checking.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Buttons Container -->
+    <div class="float-buttons-container">
+      <!-- Floating Suggestion Button -->
+      <button id="suggestButton" class="float-button">
+        <i data-lucide="lightbulb" class="w-7 h-7"></i>
+      </button>
+      <!-- Floating Settings Button -->
+      <button id="settingsButton" class="float-button">
+        <i data-lucide="settings" class="w-7 h-7"></i>
+      </button>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="text-2xl font-bold text-gray-800">App Settings</h2>
+          <button id="closeModalButton" class="modal-close-button">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
+
+        <div class="mb-4">
+          <label
+            for="geminiApiKeyInput"
+            class="block text-gray-700 text-sm font-semibold mb-2"
+          >
+            Gemini API Key:
+          </label>
+          <input
+            type="password"
+            id="geminiApiKeyInput"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-200"
+            placeholder="Enter your Gemini API key (optional)"
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            If left empty, the Canvas environment's default key will be used.
+          </p>
+        </div>
+
+        <div class="mb-4">
+          <label
+            for="backgroundColorSelect"
+            class="block text-gray-700 text-sm font-semibold mb-2"
+          >
+            Background Theme:
+          </label>
+          <select
+            id="backgroundColorSelect"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-200"
+          >
+            <option value="#f0f2f5">Default (Light Grey)</option>
+            <option value="#e0f2f7">Soft Blue</option>
+            <option value="#fdf6e3">Warm Beige</option>
+            <option value="#2d3748">Dark Mode</option>
+          </select>
+        </div>
+
+        <div class="mb-6">
+          <label
+            for="fontFamilySelect"
+            class="block text-gray-700 text-sm font-semibold mb-2"
+          >
+            Font Family:
+          </label>
+          <select
+            id="fontFamilySelect"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-200"
+          >
+            <option value="Inter, sans-serif">Inter (Default)</option>
+            <option value="Roboto, sans-serif">Roboto</option>
+            <option value="'Noto Sans KR', sans-serif">
+              Noto Sans KR (Good for Korean)
+            </option>
+            <option value="Merriweather, serif">Merriweather (Serif)</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end gap-3">
+          <button
+            id="saveSettingsButton"
+            class="bg-purple-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75"
+          >
+            <i data-lucide="save" class="inline-block mr-1 w-4 h-4"></i> Save
+            Changes
+          </button>
+          <button
+            id="cancelSettingsButton"
+            class="bg-gray-300 text-gray-800 font-semibold py-2 px-5 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Initialize Lucide Icons
+      lucide.createIcons();
+
+      // Function to format markdown-style text to HTML
+      function formatMarkdownToHTML(text) {
+        // Replace headers
+        text = text.replace(/\*\*(.*?):\*\*/g, "<h3>$1:</h3>");
+        text = text.replace(/\*(.*?):\*/g, "<h4>$1:</h4>");
+
+        // Replace bold text (multiple asterisks)
+        text = text.replace(/\*\*\*\*(.*?)\*\*\*\*/g, "<strong>$1</strong>");
+        text = text.replace(/\*\*\*(.*?)\*\*\*/g, "<strong>$1</strong>");
+        text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+        // Replace italic text
+        text = text.replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+        // Convert bullet points (lines starting with *)
+        text = text.replace(/^\* (.+)$/gm, "<li>$1</li>");
+
+        // Wrap consecutive list items in ul tags
+        text = text.replace(
+          /(<li>.*<\/li>)(\s*<li>.*<\/li>)+/gs,
+          function (match) {
+            return "<ul>" + match + "</ul>";
+          }
+        );
+
+        // Highlight Korean text in special formatting
+        text = text.replace(
+          /"([가-힣\s\d!.,?]+)"/g,
+          '<span class="korean-text">$1</span>'
+        );
+
+        // Convert line breaks to <br> tags
+        text = text.replace(/\n/g, "<br>");
+
+        return text;
+      }
+
+      // Main application logic using jQuery
+      $(document).ready(function () {
+        // Get references to main app DOM elements
+        const $koreanInput = $("#koreanInput");
+        const $checkButton = $("#checkButton");
+        const $loadingIndicator = $("#loadingIndicator");
+        const $feedbackOutput = $("#feedbackOutput"); // This now refers to the parent .feedback-card
+        const $feedbackContent = $feedbackOutput.find(".feedback-content"); // New: reference to the content div inside the card
+
+        // Get references to settings DOM elements
+        const $settingsButton = $("#settingsButton");
+        const $suggestButton = $("#suggestButton"); // New: Suggestion button
+        const $settingsModal = $("#settingsModal");
+        const $modalContent = $(".modal-content");
+        const $closeModalButton = $("#closeModalButton");
+        const $cancelSettingsButton = $("#cancelSettingsButton");
+        const $saveSettingsButton = $("#saveSettingsButton");
+        const $geminiApiKeyInput = $("#geminiApiKeyInput");
+        const $backgroundColorSelect = $("#backgroundColorSelect");
+        const $fontFamilySelect = $("#fontFamilySelect");
+
+        // Global Firebase variables (Canvas environment provides these)
+        // Note: These are available but not directly used for the AI key or theme in this specific app,
+        // as user-provided settings are stored in localStorage for simplicity and direct control.
+        const appId =
+          typeof __app_id !== "undefined" ? __app_id : "default-app-id";
+        const firebaseConfig =
+          typeof __firebase_config !== "undefined"
+            ? JSON.parse(__firebase_config)
+            : {};
+        const initialAuthToken =
+          typeof __initial_auth_token !== "undefined"
+            ? __initial_auth_token
+            : null;
+
+        // Function to open the settings modal
+        function openSettingsModal() {
+          // Load current settings into the modal inputs
+          $geminiApiKeyInput.val(localStorage.getItem("geminiApiKey") || "");
+          $backgroundColorSelect.val(
+            localStorage.getItem("appBackgroundColor") || "#f0f2f5"
+          );
+          $fontFamilySelect.val(
+            localStorage.getItem("appFontFamily") || "Inter, sans-serif"
+          );
+
+          $settingsModal.removeClass("hidden");
+          setTimeout(() => $modalContent.addClass("show"), 10); // Add show class after a tiny delay for transition
+        }
+
+        // Function to close the settings modal
+        function closeSettingsModal() {
+          $modalContent.removeClass("show");
+          setTimeout(() => $settingsModal.addClass("hidden"), 300); // Hide after transition
+        }
+
+        // Function to apply theme settings to the body
+        function applyTheme(bgColor, fontFamily) {
+          $("body").css({
+            "background-color": bgColor,
+            "font-family": fontFamily,
+          });
+        }
+
+        // Function to load settings from localStorage on app start
+        function loadInitialSettings() {
+          const savedApiKey = localStorage.getItem("geminiApiKey");
+          const savedBackgroundColor =
+            localStorage.getItem("appBackgroundColor");
+          const savedFontFamily = localStorage.getItem("appFontFamily");
+
+          if (savedBackgroundColor) {
+            applyTheme(
+              savedBackgroundColor,
+              savedFontFamily || "Inter, sans-serif"
+            );
+          } else {
+            // Apply default theme if no settings are saved
+            applyTheme("#f0f2f5", "Inter, sans-serif");
+          }
+
+          // API Key is not applied visually but used for fetch calls
+        }
+
+        // Load settings when the app starts
+        loadInitialSettings();
+
+        // Function to call Gemini API
+        async function callGeminiApi(
+          prompt,
+          targetContentElement,
+          loadingMessage
+        ) {
+          $feedbackOutput.removeClass("show-feedback"); // Hide feedback card for new content
+          $(targetContentElement).html(loadingMessage); // Set loading message in the target content element
+          $checkButton
+            .prop("disabled", true)
+            .addClass("opacity-50 cursor-not-allowed"); // Disable check button during any AI call
+          $loadingIndicator.removeClass("hidden"); // Show global loading indicator
+
+          try {
+            const userApiKey = localStorage.getItem("geminiApiKey");
+            const apiKey = userApiKey || "";
+
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+
+            const payload = {
+              contents: chatHistory,
+              generationConfig: {
+                temperature: 0.7,
+                topP: 0.95,
+                topK: 40,
+                maxOutputTokens: 500,
+              },
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (
+              result.candidates &&
+              result.candidates.length > 0 &&
+              result.candidates[0].content &&
+              result.candidates[0].content.parts &&
+              result.candidates[0].content.parts.length > 0
+            ) {
+              return result.candidates[0].content.parts[0].text;
+            } else {
+              console.error("AI response structure unexpected:", result);
+              return '<span class="text-red-600">Failed to get AI response.</span>';
+            }
+          } catch (error) {
+            console.error("Error during AI call:", error);
+            return '<span class="text-red-600">An error occurred while connecting to the AI. Please try again.</span>';
+          } finally {
+            $loadingIndicator.addClass("hidden"); // Hide global loading indicator
+            $checkButton
+              .prop("disabled", false)
+              .removeClass("opacity-50 cursor-not-allowed"); // Re-enable check button
+            $feedbackOutput.addClass("show-feedback"); // Show feedback card after content loads
+          }
+        }
+
+        // Event listener for the "Check My Korean" button
+        $checkButton.on("click", async function () {
+          const inputText = $koreanInput.val().trim(); // Get input text and trim whitespace
+
+          // Validate input
+          if (!inputText) {
+            $feedbackContent.html(
+              '<span class="text-red-600">Please enter some Korean text to check.</span>'
+            );
+            return; // Stop execution if input is empty
+          }
+
+          const prompt = `Please act as a Korean language tutor. I will provide you with Korean sentences, phrases, or paragraphs. Your task is to review my input for grammatical correctness, natural phrasing, spelling, and general fluency.
+
+                If there are errors, please provide corrections and a clear explanation of why the correction was made.
+                If the input is grammatically correct and natural, confirm that it is good and provide a brief positive comment.
+
+                Please format your response using these guidelines:
+                - Use **Section Title:** for main headings like "Review:", "Corrections:", "Suggested Correction:"
+                - Use * for bullet points
+                - Put Korean text in quotes like "한국어"
+                - Keep explanations clear and concise
+                - DO NOT use multiple asterisks like *** or **** for emphasis
+
+                Here is my Korean input: "${inputText}"`;
+
+          const aiFeedback = await callGeminiApi(
+            prompt,
+            $feedbackContent,
+            "Checking your Korean..."
+          );
+          const formattedFeedback = formatMarkdownToHTML(aiFeedback);
+          $feedbackContent.html(formattedFeedback);
+        });
+
+        // Event listener for the "Suggest" button
+        $suggestButton.on("click", async function () {
+          const prompt = `Generate a single, interesting and simple writing prompt or question in Korean for someone learning Korean. The prompt should encourage them to think in Korean about their daily life, experiences, or simple opinions. Keep it concise, one to two sentences maximum. For example: "오늘 아침 식사로 무엇을 먹었나요?" (What did you eat for breakfast today?) or "가장 좋아하는 한국 음식은 무엇인가요?" (What is your favorite Korean food?).`;
+
+          const suggestedPrompt = await callGeminiApi(
+            prompt,
+            $koreanInput,
+            "Generating a new prompt..."
+          );
+          $koreanInput.val(suggestedPrompt.replace(/\n/g, " ").trim()); // Put the suggestion directly into the input field
+          $feedbackContent.html(
+            "A new writing prompt has been generated! Try writing about it."
+          ); // Clear feedback area and give a hint
+        });
+
+        // Event listeners for settings modal
+        $settingsButton.on("click", openSettingsModal);
+        $closeModalButton.on("click", closeSettingsModal);
+        $cancelSettingsButton.on("click", closeSettingsModal);
+        // Close modal when clicking outside content
+        $settingsModal.on("click", function (e) {
+          if ($(e.target).is($settingsModal)) {
+            closeSettingsModal();
+          }
+        });
+
+        $saveSettingsButton.on("click", function () {
+          const newApiKey = $geminiApiKeyInput.val().trim();
+          const newBackgroundColor = $backgroundColorSelect.val();
+          const newFontFamily = $fontFamilySelect.val();
+
+          localStorage.setItem("geminiApiKey", newApiKey);
+          localStorage.setItem("appBackgroundColor", newBackgroundColor);
+          localStorage.setItem("appFontFamily", newFontFamily);
+
+          applyTheme(newBackgroundColor, newFontFamily);
+          closeSettingsModal();
+        });
+      });
+    </script>
+  </body>
+</html>
